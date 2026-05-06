@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ServiceResource;
 use App\Models\Service;
 use Illuminate\Http\Request;
 
@@ -29,9 +30,7 @@ class ServiceController extends Controller
 
         $services = $query->paginate(10);
 
-        // ServiceResource will be used here once created.
-        // For now, returning raw JSON response.
-        return response()->json($services);
+        return ServiceResource::collection($services);
     }
 
     /**
@@ -41,9 +40,7 @@ class ServiceController extends Controller
      */
     public function show(Service $service)
     {
-        $service->load('owner');
-
-        return response()->json($service);
+        return new ServiceResource($service->load('owner'));
     }
 
     /**
@@ -72,6 +69,8 @@ class ServiceController extends Controller
             'owner_id' => auth()->id(),
         ]);
 
-        return response()->json($service, 201);
+        return (new ServiceResource($service))
+            ->response()
+            ->setStatusCode(201);
     }
 }
