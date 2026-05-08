@@ -1,151 +1,200 @@
 <x-app-layout>
-    <div class="flex min-h-screen bg-slate-50">
+    @php
+        $owner_name = auth()->user()->name;
+        $isPremium = auth()->user()->plan === 'premium';
+        $services = auth()->user()->services;
+    @endphp
+
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-slate-200 hidden md:block">
-            <div class="h-full flex flex-col pt-5 pb-4 overflow-y-auto">
-                <nav class="mt-5 flex-1 px-4 space-y-2">
-                    <a href="{{ route('dashboard') ?? '#' }}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                        <svg class="mr-3 h-5 w-5 text-slate-400 group-hover:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        Dashboard
-                    </a>
-                    <a href="{{ route('owner.services') ?? '#' }}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-blue-50 text-blue-600 border-r-2 border-blue-500">
-                        <svg class="mr-3 h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        Manage Services
-                    </a>
-                    <a href="#" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                        <svg class="mr-3 h-5 w-5 text-slate-400 group-hover:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        View Bookings
-                    </a>
-                </nav>
+        <!-- Flash Messages -->
+        @if (session('success'))
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" class="fixed top-24 right-4 bg-green-50 text-green-700 px-6 py-4 rounded-xl shadow-lg border border-green-100 flex items-center gap-3 z-50 animate-fade-in-down">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                <p>{{ session('success') }}</p>
             </div>
-        </aside>
+        @endif
+        
+        @if (session('error'))
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" class="fixed top-24 right-4 bg-red-50 text-red-700 px-6 py-4 rounded-xl shadow-lg border border-red-100 flex items-center gap-3 z-50 animate-fade-in-down">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p>{{ session('error') }}</p>
+            </div>
+        @endif
 
-        <!-- Main Content -->
-        <main class="flex-1 py-8 px-4 sm:px-6 lg:px-8">
-            <h1 class="text-3xl font-bold text-slate-800 mb-8" style="font-family: 'Syne', sans-serif;">
-                Welcome Back, {{ auth()->user()->name ?? 'Owner' }}
-            </h1>
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-end md:items-center mb-10 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-900 tracking-tight font-syne">Manage Services</h1>
+                <p class="text-slate-500 mt-2 font-inter font-medium">Manage your offerings and pricing</p>
+            </div>
+             <button onclick="openModal('add')" class="group relative inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white transition-all duration-300 bg-blue-600 rounded-2xl hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 shadow-lg shadow-blue-500/30 transform hover:-translate-y-1">
+                <svg class="w-5 h-5 mr-3 -ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Add New Service
+            </button>
+        </div>
 
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-8">
-                <!-- Search -->
-                <div class="relative w-full lg:w-96">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </div>
-                    <input type="text" placeholder="Search appointments or services..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-slate-800 bg-white shadow-sm">
-                </div>
-
-                <div class="flex items-center gap-4 w-full lg:w-auto">
-                    <button class="bg-blue-500 hover:bg-blue-600 text-white font-medium px-4 py-2 rounded-lg transition-colors whitespace-nowrap shadow-sm">
-                        + Add New Service
-                    </button>
-                    <div class="bg-white border border-slate-200 text-slate-700 font-medium px-4 py-2 rounded-lg shadow-sm whitespace-nowrap">
-                        Pending Appointments: <span class="text-blue-600 font-bold">12</span>
-                    </div>
+        <!-- Services List Card -->
+        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+            <div class="px-10 py-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+                <h3 class="text-xl font-bold text-slate-900 font-syne">Your Services</h3>
+                <div class="flex items-center gap-2">
+                    <span class="px-4 py-2 bg-blue-50 text-blue-600 rounded-full text-xs font-black uppercase tracking-widest border border-blue-100">
+                        {{ $services->count() }} Total
+                    </span>
                 </div>
             </div>
 
-            <!-- Filters Row -->
-            <div class="flex items-center gap-4 mb-6">
-                <select class="w-48 border border-slate-200 rounded-lg px-4 py-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800 bg-white shadow-sm appearance-none">
-                    <option value="">Filter by Service</option>
-                    <option value="seo">SEO Consulting</option>
-                    <option value="web">Web Design</option>
-                </select>
-                <button class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-4 py-2 rounded-lg transition-colors shadow-sm">
-                    Confirm
-                </button>
-            </div>
-
-            <!-- All Appointments Table -->
-            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-200">
-                    <h2 class="text-lg font-bold text-slate-800" style="font-family: 'Syne', sans-serif;">All Appointments</h2>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm whitespace-nowrap">
-                        <thead class="bg-slate-50 text-slate-500 border-b border-slate-200">
-                            <tr>
-                                <th class="px-6 py-3 font-medium">Service Name</th>
-                                <th class="px-6 py-3 font-medium">Client Name</th>
-                                <th class="px-6 py-3 font-medium">Date</th>
-                                <th class="px-6 py-3 font-medium">Time</th>
-                                <th class="px-6 py-3 font-medium">Status</th>
-                                <th class="px-6 py-3 font-medium text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-200">
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4 font-medium text-slate-800">SEO Consulting</td>
-                                <td class="px-6 py-4 text-slate-600">Sarah Johnson</td>
-                                <td class="px-6 py-4 text-slate-600">Oct 24, 2024</td>
-                                <td class="px-6 py-4 text-slate-600">10:00 AM</td>
-                                <td class="px-6 py-4">
-                                    <span class="bg-green-100 text-green-700 rounded-full px-3 py-1 font-medium text-xs">Confirmed</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button class="text-blue-500 hover:text-blue-700 font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors">Edit</button>
-                                        <button class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Delete">
-                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-slate-50/30 text-left">
+                            <th class="px-10 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Service Name</th>
+                            <th class="px-10 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Price</th>
+                            <th class="px-10 py-5 text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Description</th>
+                            <th class="px-10 py-5 text-right text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        @forelse($services as $svc)
+                        <tr class="group hover:bg-blue-50/20 transition-colors duration-150">
+                            <td class="px-10 py-6">
+                                <div class="flex items-center">
+                                    <span class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors text-lg">{{ $svc->service_name }}</span>
+                                </div>
+                            </td>
+                            <td class="px-10 py-6">
+                                <span class="text-slate-900 font-black whitespace-nowrap text-lg">
+                                    ${{ number_format($svc->price, 2) }}<span class="text-xs text-slate-400 font-bold ml-1 uppercase tracking-tighter">/session</span>
+                                </span>
+                            </td>
+                            <td class="px-10 py-6">
+                                <p class="text-sm text-slate-500 font-medium line-clamp-1 max-w-xs">{{ $svc->description ?? 'No description provided.' }}</p>
+                            </td>
+                            <td class="px-10 py-6 text-right">
+                                <div class="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                    <button onclick="openModal('edit', {{ $svc->toJson() }})" class="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all" title="Edit">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                    </button>
+                                    <!-- Use Laravel delete route if available, or keep it generic for now -->
+                                    <form action="#" method="POST" class="inline-block" onsubmit="return confirm('Delete this service?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-3 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all" title="Delete">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                         </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="px-10 py-24 text-center">
+                                <div class="flex flex-col items-center justify-center">
+                                    <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 text-slate-200">
+                                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                                     </div>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4 font-medium text-slate-800">Web Design</td>
-                                <td class="px-6 py-4 text-slate-600">Michael Chen</td>
-                                <td class="px-6 py-4 text-slate-600">Oct 25, 2024</td>
-                                <td class="px-6 py-4 text-slate-600">2:30 PM</td>
-                                <td class="px-6 py-4">
-                                    <span class="bg-yellow-100 text-yellow-700 rounded-full px-3 py-1 font-medium text-xs">Pending</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button class="text-blue-500 hover:text-blue-700 font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors">Edit</button>
-                                        <button class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Delete">
-                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4 font-medium text-slate-800">Video Editing</td>
-                                <td class="px-6 py-4 text-slate-600">Emma Wilson</td>
-                                <td class="px-6 py-4 text-slate-600">Oct 25, 2024</td>
-                                <td class="px-6 py-4 text-slate-600">4:00 PM</td>
-                                <td class="px-6 py-4">
-                                    <span class="bg-red-100 text-red-700 rounded-full px-3 py-1 font-medium text-xs">Cancelled</span>
-                                </td>
-                                <td class="px-6 py-4 text-right">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <button class="text-blue-500 hover:text-blue-700 font-medium px-3 py-1 rounded hover:bg-blue-50 transition-colors">Edit</button>
-                                        <button class="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors" title="Delete">
-                                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+                                    <p class="text-slate-500 font-bold text-xl font-syne">No services added yet</p>
+                                    <button onclick="openModal('add')" class="mt-4 text-blue-600 hover:text-blue-700 text-sm font-black uppercase tracking-widest hover:underline">Add your first service</button>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-
-        </main>
+        </div>
     </div>
+
+    <!-- Modal -->
+    <div id="serviceModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Overlay -->
+            <div class="fixed inset-0 transition-opacity bg-slate-900/60 backdrop-blur-sm" aria-hidden="true" onclick="closeModal()"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full p-2">
+                <div class="bg-white px-8 pt-10 pb-6">
+                    <h3 class="text-2xl font-black text-slate-900 font-syne" id="modal-title">Add New Service</h3>
+                    <p class="text-slate-500 mt-2 font-medium">Fill in the details for your new service listing.</p>
+                </div>
+                <!-- Update this form action to point to your controller store/update methods -->
+                <form id="serviceForm" action="{{ route('owner.services') }}" method="POST" class="px-8 pb-10">
+                    @csrf
+                    <input type="hidden" id="method_field" name="_method" value="POST">
+                    <input type="hidden" id="service_id" name="service_id" value="">
+
+                    <div class="space-y-6">
+                        <div>
+                            <label for="service_name" class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Service Name</label>
+                            <input type="text" name="service_name" id="service_name" required placeholder="e.g. 1-on-1 Math Tutoring" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-slate-800 font-bold text-lg">
+                        </div>
+                        <div>
+                            <label for="price" class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Price ($)</label>
+                            <input type="number" step="0.01" name="price" id="price" required placeholder="0.00" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-slate-800 font-bold text-lg">
+                        </div>
+                        <div>
+                            <label for="description" class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Description</label>
+                            <textarea name="description" id="description" rows="3" placeholder="Briefly describe what this service entails..." class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-slate-800 font-medium"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="mt-10 flex gap-4">
+                         <button type="button" onclick="closeModal()" class="flex-1 px-6 py-4 bg-slate-100 text-slate-600 font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 px-6 py-4 bg-blue-600 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30">
+                            Save Service
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const modal = document.getElementById('serviceModal');
+        const title = document.getElementById('modal-title');
+        const form = document.getElementById('serviceForm');
+        const methodField = document.getElementById('method_field');
+        const idInput = document.getElementById('service_id');
+        const nameInput = document.getElementById('service_name');
+        const priceInput = document.getElementById('price');
+        const descInput = document.getElementById('description');
+
+        function openModal(mode, service = null) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            if (mode === 'edit' && service) {
+                title.textContent = 'Edit Service';
+                // Assuming you have an update route like /owner/services/{id}
+                form.action = `/owner/services/${service.id}`;
+                methodField.value = 'PUT';
+                idInput.value = service.id;
+                nameInput.value = service.service_name;
+                priceInput.value = service.price;
+                descInput.value = service.description || '';
+            } else {
+                title.textContent = 'Add New Service';
+                form.action = "{{ route('owner.services') }}";
+                methodField.value = 'POST';
+                idInput.value = '';
+                nameInput.value = '';
+                priceInput.value = '';
+                descInput.value = '';
+            }
+        }
+
+        function closeModal() {
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Auto-open if query param exists
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('open_add')) {
+            openModal('add');
+        }
+    </script>
 </x-app-layout>

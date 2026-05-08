@@ -1,237 +1,204 @@
 <x-app-layout>
-    <div class="flex min-h-screen bg-slate-50">
+    @php
+        $owner_id = auth()->id();
+        $isPremium = auth()->user()->plan === 'premium';
         
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r border-slate-200 hidden md:block">
-            <div class="h-full flex flex-col pt-5 pb-4 overflow-y-auto">
-                <nav class="mt-5 flex-1 px-4 space-y-2">
-                    <a href="{{ route('dashboard') ?? '#' }}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                        <svg class="mr-3 h-5 w-5 text-slate-400 group-hover:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                        </svg>
-                        Dashboard
-                    </a>
-                    <a href="{{ route('owner.services') ?? '#' }}" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors">
-                        <svg class="mr-3 h-5 w-5 text-slate-400 group-hover:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
-                        Manage Services
-                    </a>
-                    <a href="#" class="group flex items-center px-4 py-3 text-sm font-medium rounded-lg bg-blue-50 text-blue-600 border-r-2 border-blue-500">
-                        <svg class="mr-3 h-5 w-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        View Bookings
-                    </a>
-                </nav>
-            </div>
-        </aside>
+        $year = request('year', date('Y'));
+        $month = request('month', date('m'));
 
-        <!-- Main Content -->
-        <main class="flex-1 py-8 px-4 sm:px-6 lg:px-8 max-w-full overflow-hidden">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-                <h1 class="text-3xl font-bold text-slate-800" style="font-family: 'Syne', sans-serif;">
-                    View Bookings - <span class="text-blue-600">October 2024</span>
-                </h1>
-                
-                <div class="flex items-center gap-4 bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
-                    <button class="px-4 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-600 shadow-sm">Month</button>
-                    <button class="px-4 py-1.5 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-50 transition-colors">Day</button>
-                </div>
-            </div>
+        $date = \Carbon\Carbon::createFromDate($year, $month, 1);
+        $monthName = $date->format('F');
+        
+        $prevMonthDate = $date->copy()->subMonth();
+        $nextMonthDate = $date->copy()->addMonth();
+        
+        $daysInMonth = $date->daysInMonth;
+        $firstDayOfWeek = $date->dayOfWeek; // 0 (Sun) to 6 (Sat)
+        
+        // Fetch appointments for this month
+        $appointments = auth()->user()->services()
+            ->with(['appointments' => function($q) use ($year, $month) {
+                $q->whereYear('appointment_date', $year)
+                  ->whereMonth('appointment_date', $month)
+                  ->with('user');
+            }])
+            ->get()
+            ->pluck('appointments')
+            ->flatten();
 
-            <!-- Calendar Container -->
-            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col h-[700px]">
+        $calendarEvents = $appointments->groupBy(function($appt) {
+            return (int) \Carbon\Carbon::parse($appt->appointment_date)->format('j');
+        });
+    @endphp
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        
+        <!-- Calendar Container -->
+        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-100 overflow-hidden">
+            
+            <!-- Calendar Header -->
+            <div class="px-10 py-8 flex flex-col md:flex-row justify-between items-center gap-6 border-b border-slate-50">
                 
-                <!-- Calendar Header -->
-                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-                    <h2 class="text-lg font-bold text-slate-800" style="font-family: 'Syne', sans-serif;">October 2024</h2>
+                <!-- Title & Nav -->
+                <div class="flex items-center gap-6">
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight font-syne">
+                        {{ $monthName }} {{ $year }}
+                    </h2>
                     <div class="flex items-center gap-2">
-                        <button class="p-2 border border-slate-200 rounded-lg hover:bg-white text-slate-600 transition-colors">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
-                        <button class="px-4 py-2 border border-slate-200 rounded-lg hover:bg-white text-slate-600 font-medium text-sm transition-colors">
+                         <a href="?month={{ $prevMonthDate->month }}&year={{ $prevMonthDate->year }}" class="p-3 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all shadow-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </a>
+                        <a href="?month={{ now()->month }}&year={{ now()->year }}" class="px-6 py-3 bg-white border border-slate-100 text-slate-600 font-bold text-sm rounded-2xl hover:bg-slate-50 transition-all shadow-sm">
                             Today
-                        </button>
-                        <button class="p-2 border border-slate-200 rounded-lg hover:bg-white text-slate-600 transition-colors">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                            </svg>
-                        </button>
+                        </a>
+                        <a href="?month={{ $nextMonthDate->month }}&year={{ $nextMonthDate->year }}" class="p-3 bg-slate-50 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all shadow-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </a>
                     </div>
                 </div>
 
-                <!-- Calendar Grid -->
-                <div class="flex-1 flex flex-col">
-                    <!-- Days of week -->
-                    <div class="grid grid-cols-7 border-b border-slate-200 text-center text-sm font-medium text-slate-500 bg-white">
-                        <div class="py-3">Sun</div>
-                        <div class="py-3">Mon</div>
-                        <div class="py-3">Tue</div>
-                        <div class="py-3">Wed</div>
-                        <div class="py-3">Thu</div>
-                        <div class="py-3">Fri</div>
-                        <div class="py-3">Sat</div>
-                    </div>
+                <div class="flex items-center gap-4">
+                    @if ($isPremium)
+                        <button onclick="document.getElementById('blockModal').classList.remove('hidden')" class="bg-red-50 text-red-600 px-6 py-3 rounded-2xl font-black uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-all flex items-center gap-2 text-xs shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                            Block Date
+                        </button>
+                    @endif
 
-                    <!-- Days Grid -->
-                    <!-- Simulating a 5-week month grid -->
-                    <div class="grid grid-cols-7 grid-rows-5 flex-1 bg-slate-200 gap-px">
-                        
-                        <!-- Row 1 -->
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium mb-1">29</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium mb-1">30</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">1</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">2</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">3</span>
-                            <div class="bg-green-100 border border-green-200 text-green-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-green-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                                SEO Cons...
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">4</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">5</span>
-                        </div>
-
-                        <!-- Row 2 -->
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">6</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">7</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">8</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">9</span>
-                            <div class="bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-yellow-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0"></span>
-                                Web Design
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">10</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">11</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">12</span>
-                        </div>
-
-                        <!-- Row 3 -->
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">13</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">14</span>
-                            <div class="bg-green-100 border border-green-200 text-green-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-green-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                                Content W...
-                            </div>
-                            <div class="bg-red-100 border border-red-200 text-red-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-red-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                                Web Design
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">15</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">16</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">17</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col relative">
-                            <!-- Today indicator -->
-                            <div class="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mb-1 shadow-sm mx-auto sm:mx-0">18</div>
-                            <div class="bg-green-100 border border-green-200 text-green-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-green-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                                Video Edit...
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">19</span>
-                        </div>
-
-                        <!-- Row 4 -->
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">20</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">21</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">22</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col">
-                            <span class="text-sm font-medium text-slate-800 mb-1">23</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">24</span>
-                            <div class="bg-green-100 border border-green-200 text-green-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-green-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0"></span>
-                                SEO Cons...
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">25</span>
-                            <div class="bg-yellow-100 border border-yellow-200 text-yellow-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-yellow-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0"></span>
-                                Web Design
-                            </div>
-                            <div class="bg-red-100 border border-red-200 text-red-700 text-xs rounded px-2 py-1 truncate mb-1 flex items-center gap-1.5 cursor-pointer hover:bg-red-200">
-                                <span class="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>
-                                Video Edit...
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">26</span>
-                        </div>
-
-                        <!-- Row 5 -->
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">27</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">28</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">29</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">30</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium text-slate-800 mb-1">31</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium mb-1">1</span>
-                        </div>
-                        <div class="bg-white p-2 min-h-[100px] flex flex-col text-slate-400">
-                            <span class="text-sm font-medium mb-1">2</span>
-                        </div>
-
+                    <div class="hidden sm:flex bg-slate-50 p-1.5 rounded-2xl border border-slate-100 shadow-inner">
+                        <button class="px-6 py-2 bg-white shadow-md text-slate-900 text-xs font-black uppercase tracking-widest rounded-xl">Month</button>
+                        <button class="px-6 py-2 text-slate-400 text-xs font-black uppercase tracking-widest hover:text-slate-900 transition-colors">Day</button>
                     </div>
                 </div>
             </div>
 
-        </main>
+            <!-- Calendar Grid Header -->
+            <div class="grid grid-cols-7 border-b border-slate-50 bg-slate-50/30">
+                @foreach (['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $day)
+                    <div class="py-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                        {{ $day }}
+                    </div>
+                @endforeach
+            </div>
+
+            <!-- Calendar Grid Body -->
+            <div class="grid grid-cols-7 bg-white">
+                @php
+                    // Empty cells at start
+                    for ($i = 0; $i < $firstDayOfWeek; $i++) {
+                        echo '<div class="h-40 border-b border-r border-slate-50 bg-slate-50/10"></div>';
+                    }
+
+                    // Days
+                    for ($day = 1; $day <= $daysInMonth; $day++) {
+                        $isToday = ($day == date('j') && $month == date('m') && $year == date('Y'));
+                        $cellClass = "h-40 border-b border-r border-slate-50 p-3 relative group hover:bg-blue-50/20 transition-all flex flex-col gap-2";
+                        
+                        echo "<div class='$cellClass'>";
+                        
+                        // Day Number
+                        $numClass = "text-sm font-black w-8 h-8 flex items-center justify-center rounded-full transition-all " . ($isToday ? "bg-blue-600 text-white shadow-lg shadow-blue-200 scale-110" : "text-slate-400 group-hover:text-blue-600");
+                        echo "<span class='$numClass'>$day</span>";
+
+                        // Events
+                        if (isset($calendarEvents[$day])) {
+                            echo '<div class="flex flex-col gap-1.5 overflow-y-auto mt-1 pr-1 custom-scrollbar">';
+                            foreach ($calendarEvents[$day] as $event) {
+                                $colorClass = "bg-blue-50 text-blue-700 border-blue-100"; 
+                                if ($event->status === 'pending') $colorClass = "bg-amber-50 text-amber-700 border-amber-100";
+                                if ($event->status === 'cancelled') $colorClass = "bg-red-50 text-red-700 border-red-100";
+                                if ($event->status === 'completed') $colorClass = "bg-green-50 text-green-700 border-green-100";
+                                
+                                $clientName = $event->user->name ?? 'Guest';
+                                $serviceName = $event->service->service_name ?? 'Service';
+
+                                echo "<div class='text-[10px] px-2.5 py-1.5 rounded-xl border font-bold truncate $colorClass shadow-sm cursor-pointer hover:scale-[1.02] transition-transform' title='$clientName - $serviceName'>";
+                                echo strtoupper($clientName);
+                                echo "</div>";
+                            }
+                            echo '</div>';
+                        }
+
+                        echo "</div>";
+                    }
+
+                    // Fill remaining cells
+                    $totalCells = $firstDayOfWeek + $daysInMonth;
+                    $remainingCells = 7 - ($totalCells % 7);
+                    if ($remainingCells < 7) {
+                         for ($i = 0; $i < $remainingCells; $i++) {
+                            echo '<div class="h-40 border-b border-r border-slate-50 bg-slate-50/10"></div>';
+                        }
+                    }
+                @endphp
+            </div>
+
+        </div>
+
     </div>
+
+    <!-- Block Date Modal -->
+    <div id="blockModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full p-10 m-4 transform transition-all">
+            <div class="flex justify-between items-center mb-8">
+                <h3 class="text-2xl font-black text-slate-900 font-syne">Block Schedule</h3>
+                <button type="button" onclick="document.getElementById('blockModal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <form action="#" method="POST" class="space-y-6">
+                @csrf
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Select Date</label>
+                    <input type="date" name="block_date" required class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white transition-all text-slate-800 font-bold">
+                </div>
+
+                <div class="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <input type="checkbox" id="is_full_day" name="is_full_day" value="1" checked onchange="toggleTimeInputs(this)" class="rounded-lg text-blue-600 focus:ring-blue-500 w-5 h-5 border-slate-300">
+                    <label for="is_full_day" class="text-sm font-bold text-slate-600">Block Full Day</label>
+                </div>
+
+                <div id="timeInputs" class="grid grid-cols-2 gap-4 hidden">
+                    <div>
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Start Time</label>
+                        <input type="time" name="start_time" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 text-slate-800 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">End Time</label>
+                        <input type="time" name="end_time" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 text-slate-800 font-bold">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Reason (Optional)</label>
+                    <input type="text" name="reason" placeholder="e.g. Personal Leave, Holiday" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 text-slate-800 font-bold">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-red-600 text-white font-black uppercase tracking-widest py-5 rounded-2xl hover:bg-red-700 transition-all shadow-xl shadow-red-200 transform hover:-translate-y-1">
+                        Confirm Block
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleTimeInputs(checkbox) {
+            const timeInputs = document.getElementById('timeInputs');
+            if (checkbox.checked) {
+                timeInputs.classList.add('hidden');
+            } else {
+                timeInputs.classList.remove('hidden');
+            }
+        }
+    </script>
+    
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+    </style>
 </x-app-layout>

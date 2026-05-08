@@ -41,9 +41,18 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
     Route::patch('/appointments/{appointment}/cancel', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
 
+    // Upgrade
+    Route::get('/upgrade', function () {
+        return view('upgrade.index');
+    })->name('upgrade');
+
 // Owner-only: manage their own services
 Route::get('/owner/services', [ServiceController::class, 'ownerIndex'])
      ->middleware('role:owner')
      ->name('owner.services');
+
+Route::get('/owner/bookings', function () {
+    return view('owner.bookings');
+})->middleware(['auth', 'role:owner'])->name('owner.bookings');
      
 });

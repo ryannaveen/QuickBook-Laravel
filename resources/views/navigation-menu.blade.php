@@ -12,9 +12,27 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
+                    @if (auth()->user()->role === 'owner')
+                        <x-nav-link href="{{ route('owner.dashboard') }}" :active="request()->routeIs('owner.dashboard')">
+                            {{ __('Home') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('owner.bookings') }}" :active="request()->routeIs('owner.bookings')">
+                            {{ __('View Bookings') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('owner.services') }}" :active="request()->routeIs('owner.services')">
+                            {{ __('Manage Services') }}
+                        </x-nav-link>
+                    @else
+                        <x-nav-link href="{{ route('client.dashboard') }}" :active="request()->routeIs('client.dashboard')">
+                            {{ __('Home') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('appointments.index') }}" :active="request()->routeIs('appointments.index')">
+                            {{ __('My Bookings') }}
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('services.index') }}" :active="request()->routeIs('services.index')">
+                            {{ __('Browse Services') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -139,9 +157,27 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
+            @if (auth()->user()->role === 'owner')
+                <x-responsive-nav-link href="{{ route('owner.dashboard') }}" :active="request()->routeIs('owner.dashboard')">
+                    {{ __('Home') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('owner.bookings') }}" :active="request()->routeIs('owner.bookings')">
+                    {{ __('View Bookings') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('owner.services') }}" :active="request()->routeIs('owner.services')">
+                    {{ __('Manage Services') }}
+                </x-responsive-nav-link>
+            @else
+                <x-responsive-nav-link href="{{ route('client.dashboard') }}" :active="request()->routeIs('client.dashboard')">
+                    {{ __('Home') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('appointments.index') }}" :active="request()->routeIs('appointments.index')">
+                    {{ __('My Bookings') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link href="{{ route('services.index') }}" :active="request()->routeIs('services.index')">
+                    {{ __('Browse Services') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

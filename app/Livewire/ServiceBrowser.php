@@ -2,9 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Mail\AppointmentBooked;
 use App\Models\Appointment;
 use App\Models\Service;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -116,13 +118,18 @@ class ServiceBrowser extends Component
         }
 
         \DB::transaction(function () {
-            Appointment::create([
+            $appointment = Appointment::create([
                 'user_id'          => auth()->id(),
                 'service_id'       => $this->selectedService,
                 'appointment_date' => $this->appointmentDate,
                 'appointment_time' => $this->appointmentTime,
                 'status'           => 'pending',
             ]);
+
+            $appointment->load('service.owner');
+
+            Mail::to(auth()->user()->email)
+                ->send(new AppointmentBooked($appointment));
         });
 
         $this->bookingSuccess = true;

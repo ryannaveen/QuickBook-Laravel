@@ -15,69 +15,66 @@
     <script src="//unpkg.com/alpinejs" defer></script>
 </head>
 <body class="bg-slate-50 text-slate-800 antialiased font-sans selection:bg-blue-500 selection:text-white min-h-screen flex flex-col">
-    <!-- Blue Navbar -->
-    <nav class="sticky top-0 z-40 w-full bg-blue-600 text-white shadow-md">
+    <!-- White Navbar -->
+    <nav class="sticky top-0 z-40 w-full bg-white border-b border-slate-100 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
+            <div class="flex justify-between h-20 items-center">
                 <!-- Logo -->
                 <div class="flex items-center gap-2">
                     <a href="{{ url('/') }}" class="flex items-center gap-2">
-                        <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                            <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-200">
+                            <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                         </div>
-                        <span class="font-bold text-xl tracking-tight" style="font-family: 'Syne', sans-serif;">QuickBook</span>
+                        <span class="font-bold text-2xl tracking-tight text-slate-900" style="font-family: 'Syne', sans-serif;">QuickBook</span>
                     </a>
                 </div>
 
                 <!-- Nav Links (Desktop) -->
-                <div class="hidden md:flex items-center space-x-8">
+                <div class="hidden md:flex items-center space-x-10">
                     @auth
                         @if(auth()->user()->role === 'owner')
-                            <a href="{{ route('dashboard') }}" class="hover:text-blue-200 font-medium transition-colors">Dashboard</a>
-                            <a href="{{ route('owner.services') }}" class="hover:text-blue-200 font-medium transition-colors">Manage Services</a>
-                            <a href="#" class="hover:text-blue-200 font-medium transition-colors">View Bookings</a>
+                            <a href="{{ route('dashboard') }}" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Dashboard</a>
+                            <a href="{{ route('owner.services') }}" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Manage Services</a>
+                            <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">View Bookings</a>
                         @else
-                            <a href="{{ route('dashboard') }}" class="hover:text-blue-200 font-medium transition-colors">Features</a>
-                            <a href="{{ route('appointments.index') }}" class="hover:text-blue-200 font-medium transition-colors">My Bookings</a>
-                            <a href="#" class="hover:text-blue-200 font-medium transition-colors">Profile</a>
+                            <a href="{{ route('dashboard') }}" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Features</a>
+                            <a href="{{ route('appointments.index') }}" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">My Bookings</a>
+                            <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Profile</a>
                         @endif
                     @else
-                        <a href="#" class="hover:text-blue-200 font-medium transition-colors">Features</a>
-                        <a href="#" class="hover:text-blue-200 font-medium transition-colors">How it Works</a>
-                        <a href="#" class="hover:text-blue-200 font-medium transition-colors">Pricing</a>
+                        <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Features</a>
+                        <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">How it Works</a>
+                        <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold transition-colors">Pricing</a>
                     @endauth
                 </div>
 
                 <!-- Auth Buttons -->
                 <div class="flex items-center gap-4">
                     @auth
-                        <div class="flex items-center gap-3">
-                            <div class="hidden sm:flex flex-col items-end">
-                                <span class="text-sm font-medium">Hi, {{ auth()->user()->name }}</span>
-                                <span class="text-[10px] font-bold uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded">{{ auth()->user()->role }}</span>
+                        <div class="flex items-center gap-4">
+                            <div class="hidden sm:flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
+                                <span class="text-sm font-semibold text-slate-700">Hi, {{ auth()->user()->name }}</span>
+                                <div class="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-sm">
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode(auth()->user()->name) }}&background=3b82f6&color=fff" alt="Profile">
+                                </div>
                             </div>
                             
                             <form method="POST" action="{{ route('logout') }}" class="m-0">
                                 @csrf
-                                <button type="submit" class="hover:bg-blue-700 p-2 rounded-full transition-colors flex items-center justify-center">
-                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <button type="submit" class="text-slate-400 hover:text-red-500 transition-colors">
+                                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                     </svg>
                                 </button>
                             </form>
-                            
-                            <!-- Profile Avatar -->
-                            <div class="w-8 h-8 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold cursor-pointer hover:bg-blue-300 transition-colors border border-white/30">
-                                {{ substr(auth()->user()->name, 0, 1) }}
-                            </div>
                         </div>
                     @else
-                        <a href="{{ route('login') }}" class="px-4 py-2 text-white hover:text-blue-200 font-medium transition-colors">
+                        <a href="{{ route('login') }}" class="px-6 py-2 text-slate-700 hover:text-blue-600 font-bold transition-colors">
                             Login
                         </a>
-                        <a href="{{ route('register') }}" class="px-4 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg font-medium transition-colors shadow-sm">
+                        <a href="{{ route('register') }}" class="px-6 py-3 bg-blue-600 text-white hover:bg-blue-700 rounded-xl font-bold transition-all shadow-lg shadow-blue-200">
                             Sign Up
                         </a>
                     @endauth
@@ -116,6 +113,17 @@
     <main class="flex-1 flex flex-col">
         {{ $slot }}
     </main>
+
+    <footer class="bg-white border-t border-slate-100 py-10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p class="text-slate-500 text-sm">Copyright &copy; 2024 QuickBook SAAS</p>
+            <div class="mt-4 flex justify-center gap-6 text-sm">
+                <a href="#" class="text-slate-400 hover:text-blue-600 transition-colors">Terms of Service</a>
+                <span class="text-slate-200">|</span>
+                <a href="#" class="text-slate-400 hover:text-blue-600 transition-colors">Privacy Policy</a>
+            </div>
+        </div>
+    </footer>
 
     @livewireScripts
 </body>

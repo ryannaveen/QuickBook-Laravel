@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Mail\AppointmentCancelled;
 use App\Models\Appointment;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -37,20 +39,23 @@ class AppointmentList extends Component
         }
 
         $appointment->update(['status' => 'cancelled']);
+
+        $appointment->load('service.owner');
+
+        Mail::to(auth()->user()->email)
+            ->send(new AppointmentCancelled($appointment));
+
         $this->successMessage = 'Appointment cancelled successfully.';
         $this->errorMessage   = '';
     }
 
     public function render()
     {
-        $appointments = Appointment::with('service', 'service.owner')
+        $appointments = Appointment::with('service', 'service.user')
             ->where('user_id', auth()->id())
-            ->when($this->filterStatus !== 'all', fn($q) =>
-                $q->where('status', $this->filterStatus)
-            )
             ->orderByDesc('appointment_date')
             ->orderByDesc('appointment_time')
-            ->paginate(8);
+            ->get();
 
         return view('livewire.appointment-list', compact('appointments'));
     }
